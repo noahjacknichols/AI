@@ -138,17 +138,50 @@ def DFSlimited(cur_state, limit):
 def printState(cur_state):
     print("<{},{},{},{},{}>".format(cur_state.cLeft, cur_state.mLeft, cur_state.boat, cur_state.cRight, cur_state.mRight))
 
+def speedTest():
+
+    # Limited DFS, limit = 20
+    limit = 20
+    print("Starting Limited DFS with limit =", limit)
+    print("------------------------")
+    startTime = time.time()
+    initial_state = State(3, 3, 'left', 0, 0, None)
+    finish_state = DFSlimited(initial_state, 20)
+    if(finish_state == 'cutoff'):
+        print("finish state not found")
+    else:
+        print("returned state is:")
+        printState(finish_state)
+    endTime = time.time() - startTime
+    print("search took %.2f seconds to complete" %(endTime))
+    print("------------------------")
+
+    # BFS
+    print("Starting BFS")
+    print("------------------------")
+    startTime = time.time()
+    finish_state = BFS(initial_state)
+    endTime = time.time() - startTime
+    print("search took %.2f seconds to complete" %(endTime))
+    print("------------------------")
+
+
+
+
+
 
 def main():
-    starttime = time.time()
-    initial_state = State(3, 3, 'left', 0, 0, None)
+
+    speedTest()
+    # starttime = time.time()
+    # initial_state = State(3, 3, 'left', 0, 0, None)
     
-    finish_state = DFSlimited(initial_state, 20)
-    if finish_state == 'cutoff' or finish_state == None:
-        print("not found")
+    # finish_state = DFSlimited(initial_state, 20)
+    # if finish_state == 'cutoff' or finish_state == None:
+    #     print("not found")
     
-    else:
-        printState(finish_state)
+    # else:
+    #     printState(finish_state)
     
     # finish_state = BFS(initial_state)
     # path = []
@@ -160,8 +193,8 @@ def main():
     # for i in range(len(path) - 1, -1, -1):
     #     printState(path[i])
 
-    endtime = time.time() - starttime
-    print(endtime)
+    # endtime = time.time() - starttime
+    # print(endtime)
 
 if __name__ == "__main__":
     main()
