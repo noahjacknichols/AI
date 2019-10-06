@@ -166,35 +166,24 @@ def speedTest():
     print("------------------------")
 
 
-
+def printBFSPath(finish_state):
+    path = []
+    while finish_state != None:
+        #printState(finish_state)
+        path.append(finish_state)
+        finish_state = finish_state.parent
+    #print("-----------------------")
+    for i in range(len(path) - 1, -1, -1):
+        printState(path[i])
 
 
 
 def main():
 
-    speedTest()
-    # starttime = time.time()
-    # initial_state = State(3, 3, 'left', 0, 0, None)
-    
-    # finish_state = DFSlimited(initial_state, 20)
-    # if finish_state == 'cutoff' or finish_state == None:
-    #     print("not found")
-    
-    # else:
-    #     printState(finish_state)
-    
-    # finish_state = BFS(initial_state)
-    # path = []
-    # while finish_state != None:
-    #     printState(finish_state)
-    #     path.append(finish_state)
-    #     finish_state = finish_state.parent
-    # print("-----------------------")
-    # for i in range(len(path) - 1, -1, -1):
-    #     printState(path[i])
-
-    # endtime = time.time() - starttime
-    # print(endtime)
+    #speedTest()
+    initial_state = State(3, 3, 'left', 0, 0, None)
+    finish_state = BFS(initial_state)
+    printBFSPath(finish_state)
 
 if __name__ == "__main__":
     main()
