@@ -21,22 +21,14 @@ class CSP:
         b = [self.rowNeighbors(self.domain, i) for i in range(9)]
         c = [self.cellNeighbors(self.domain, i, j) for i in range(9) for j in range(9)]
 
-        self.neighbors = a+b+c #omegaLul
-        # self.units = dict((s, [u[1] for u in self.neighbors if s in u[0]]) for s in self.variables)
-        # for x in self.units:
-        #     print(self.units[x])
-        # print(self.units)
 
+        self.allNeighbors = (a + b + c)
 
-    # def nandDomain(pos,a,b,c):
-    #     domain = []
-    #     for i in range(1,10):
-    #         for x in a:
-    #             for y in b:
-    #                 for z in c:
-    #                     if(i not in x[1] and i not in y[1] and i not in z[1]):
-    #                         if(i not in domain):
-    #                             domain.append(i)
+        self.keys = dict((s, [u for u in self.allNeighbors if s in u]) for s in self.variables)
+        self.neighbors = dict((s, set(sum(self.keys[s], [])) - set([s])) for s in self.variables)
+        self.constraints = dict((variable, neighbor) for variable in self.variables for neighbor in self.neighbors[variable])
+    
+        print(self.constraints)
         
 
     def colNeighbors(self, b, col):
@@ -61,15 +53,51 @@ class CSP:
         domCol = col - col % 3
         for j in range(3):
             for i in range(3):
-                # print("j+domCol:", j+domCol, "i+domRow:", i+domRow)
-                # if(j+domCol != col or i+domRow != row):
-                    # print("B POSITION:",(j+domCol) + (i+domRow)*9)
-                    # print("B @ POSITION: ",b[(j+domCol) + (i+domRow)*9])
                     neighbors.append(b[(j+domCol) + (i+domRow)*9])
-                    # print("cell is given cell")
-        # print("I AM HEREEEEE")
-        # print(neighbors)
         return neighbors
+
+
+
+def AC3_A_BITCH(csp):
+    q = queue.Queue()
+
+    #GET ARCS -  call the function boi
+    #GET NEIGHBORS - call function
+    while not q.empty():
+        (Xi, Xj) = q.pop()
+        if(revision(csp,Xi,Xj)):
+            if(len(csp.values[Xi]) == 0):
+                return False
+            for Xk in csp.GETNEIGHBORS(Xi):  #<-- do the function thing
+                q.push((Xk, Xi))
+    return True
+
+
+def backtrack(csp):
+
+    return bigGay
+
+
+#revision algorithm. reduces domain of Xi based on constraints
+def revision(csp, Xi, Xj):
+    i = 0
+    DOMi = csp.values[Xi]
+    isRevised = False
+    for x in DOMi:
+        valid = True
+        for y in csp.values[Xj]:
+            if x != y:
+                valid = False
+        if valid:
+            DOMi.pop(i)
+            isRevised = True
+        else:
+            i += 1
+    return isRevised
+
+
+
+
 
 
 file = open("nickisdumb.txt", 'r')
