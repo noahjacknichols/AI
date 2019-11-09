@@ -1,79 +1,75 @@
 
 import sys
 
+fullDomain = [1,2,3,4,5,6,7,8,9]
+
+class cell:
+    def init(self, row, col, value):
+        self.row = row
+        self.col = col
+        self.value = value
+
 class CSP:
     def __init__(self, inp):
-        fullDomain = [1,2,3,4,5,6,7,8,9]
-        counter = 0
-        arr = [[0] * 9 for i in range(9)]
-        # print(arr)
-        for i in range(len(arr)):
-            for j in range(len(arr)):
-                arr[i][j] = int(inp[counter])
-                counter+=1
-                # print(counter)
-        print(arr)
-        self.variables = arr
-        domain = [[[]] * 9 for i in range(9)]
-        CSP.domain = domain
-        # print("SELF VARIABLES:")
-        # print(self.variables)
-        for j in range(len(self.variables)):
-            for i in range(len(self.variables)):
-                print(self.variables[j][i])
-                if(self.variables[j][i] != 0):
-                    #variables[i][j] is between 1-9
-                    print("1-9")
-                    self.domain[j][i] = [self.variables[j][i]]
+        self.variables = [r + c for r in 'ABCDEFGHI' for c in '123456789']
+        self.values = [int(val) for val in inp]
+        self.domain = [(var, fullDomain if self.values[self.variables.index(var)] == 0 else self.values[self.variables.index(var)]) for var in self.variables]
+        a = [self.colNeighbors(self.domain, i) for i in range(9)]
+        print("A IS:~")
+        print(a)
+        print("----------")
+        b = [self.rowNeighbors(self.domain, i) for i in range(9)]
+        c = [self.cellNeighbors(self.domain, i, j) for i in range(9) for j in range(9)]
 
-                else:
-                    #value is 0 check row, col, 3x3
-                    print("value is not 1-9")
-                    a = self.checkCol(self.variables[j][i], i, j)
-                    b = self.checkRow(self.variables[j][i], i, j)
-                    c = self.check3x3(self.variables[j][i], i, j)
-                    print("A:", a, "\nB:", b, "\nC:", c)
-                    self.domain[j][i] = list(set(fullDomain) - set(a) - set(b) - set(c))
-        for i in range(9):
-            print(self.variables[i])
-        print("DOMAIN IS:")
-        print(domain[0][0])
+        self.neighbors = a+b+c #omegaLul
+        # self.units = dict((s, [u[1] for u in self.neighbors if s in u[0]]) for s in self.variables)
+        # for x in self.units:
+        #     print(self.units[x])
+        # print(self.units)
 
 
+    # def nandDomain(pos,a,b,c):
+    #     domain = []
+    #     for i in range(1,10):
+    #         for x in a:
+    #             for y in b:
+    #                 for z in c:
+    #                     if(i not in x[1] and i not in y[1] and i not in z[1]):
+    #                         if(i not in domain):
+    #                             domain.append(i)
+        
 
-    def checkCol(self, b, row, col):
-        return [self.variables[i][row] for i in range(len(self.variables[row]))]
-    
-    def checkRow(self, b, row, col):
-        return self.variables[col]
-    
-    def check3x3(self, b, row, col):
-        domain = []
+    def colNeighbors(self, b, col):
+        neighbors = []
+        for i in range(col, len(b), 9):
+            neighbors.append(b[i])
+
+        return neighbors
+
+    def rowNeighbors(self, b, row):
+        neighbors = []
+        end = (row + 1) * 9
+        start = end - 9
+        for i in range(start, end, 1):
+            neighbors.append(b[i])
+
+        return neighbors
+    def cellNeighbors(self, b, row, col):
+        # print("R:", row, "C:", col)
+        neighbors = []
         domRow = row - row % 3
         domCol = col - col % 3
-        for i in range(3):
-            for j in range(3):
-                domain.append(self.variables[i+domCol][j+domRow])
-        
-        return domain
-
-    
-    # def setDomain(self):
-    #     arr = self.variables
-    #     domain = [1,2,3,4,5,6,7,8,9]
-    #     valuesSeen = []
-    #     for i in range(len(arr)):
-    #         for j in range(len(arr)):
-    #             if(int(arr[i][j]) not in valuesSeen):
-    #                 valuesSeen.append(int(arr[i][j]))
-    #         for x in domain:
-    #             if(domain[x] not in valuesSeen):
-    #                 self.domain[i].append(domain[x])
-    #         valuesSeen = []
-        
-
-
-
+        for j in range(3):
+            for i in range(3):
+                # print("j+domCol:", j+domCol, "i+domRow:", i+domRow)
+                # if(j+domCol != col or i+domRow != row):
+                    # print("B POSITION:",(j+domCol) + (i+domRow)*9)
+                    # print("B @ POSITION: ",b[(j+domCol) + (i+domRow)*9])
+                    neighbors.append(b[(j+domCol) + (i+domRow)*9])
+                    # print("cell is given cell")
+        # print("I AM HEREEEEE")
+        # print(neighbors)
+        return neighbors
 
 
 file = open("nickisdumb.txt", 'r')
@@ -83,4 +79,5 @@ if(len(inp) == 81):
     #call init CSP function
     print("INP:", inp)
     print("made it here")
-    csp = CSP(inp)
+    lool = '003020600900305001001806400008102900700000008006708200002609500800203009005010300'
+    csp = CSP(lool)
