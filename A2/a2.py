@@ -1,6 +1,7 @@
 
 import sys
 import queue
+import copy
 
 fullDomain = [1,2,3,4,5,6,7,8,9]
 
@@ -25,7 +26,7 @@ class CSP:
             if(inp[index] == '0'):
                 self.values[x] = [1,2,3,4,5,6,7,8,9]
             else:
-                self.values[x] = int(inp[index])
+                self.values[x] = [int(inp[index])]
             index+=1
         print(self.values)
         self.arcs = {}
@@ -39,7 +40,7 @@ class CSP:
         
 
     def printSudoku(self):
-        dash = "+++++++++++++"
+        dash = "------------"
         line = ""
         counter = 0
         for y in range(0,9):
@@ -47,11 +48,11 @@ class CSP:
                 print(dash)
             for x in range(0,9):
                 if(x%3 == 0):
-                    line+='+'
+                    line+='|'
                 line+= self.inp[counter]
                 counter+=1
 
-            print(line+'+')
+            print(line+'|')
             line = ''
         print(dash)
         
@@ -82,6 +83,24 @@ class CSP:
 
         return arcs
 
+    def isSolved(self):
+        result = True
+        for d in self.values.values():
+            if(len(d) > 1):
+                result = False
+                break
+        return result
+
+    def cloneValues(self):
+        values = {}
+        for key in self.values.keys():
+            newValues = []
+            for nextValue in self.values[key]:
+                newValues.append(nextValue)
+            values[key] = newValues
+        return values
+
+
     def getValues(self):
         return self.values
 
@@ -95,6 +114,27 @@ class CSP:
         return self.values[Xi]
     def removeFromDomain(self, Xi, i):
         self.values[Xi].remove(i)
+    def revision(self, Xi, Xj):
+        i = 0
+        domXi = self.values[Xi] #get domain of Xi eg. 'A1'
+        domXj = csp.getDomain(Xj)
+        print("Xi:",domXi)
+        print("Xj:", domXj)
+        isRevised = False
+        for x in domXi:
+            invalid = True
+            
+            for y in self.values[Xj]:
+                print("X:",x,"Y:",y)
+                if x != y:
+                    invalid = False
+            if invalid:
+                print("inalid. Xi:",Xi,"i:",i)
+                domXi.pop(i)
+                isRevised = True
+            else:
+                i += 1
+        return isRevised
 
         # print("values:")
         
@@ -112,59 +152,46 @@ class CSP:
         # print(self.constraints)
         
 
-    def colNeighbors(self, b, col):
-        neighbors = []
-        for i in range(col, len(b), 9):
-            neighbors.append(b[i])
+    # def colNeighbors(self, b, col):
+    #     neighbors = []
+    #     for i in range(col, len(b), 9):
+    #         neighbors.append(b[i])
 
-        return neighbors
+    #     return neighbors
 
-    def rowNeighbors(self, b, row):
-        neighbors = []
-        end = (row + 1) * 9
-        start = end - 9
-        for i in range(start, end, 1):
-            neighbors.append(b[i])
+    # def rowNeighbors(self, b, row):
+    #     neighbors = []
+    #     end = (row + 1) * 9
+    #     start = end - 9
+    #     for i in range(start, end, 1):
+    #         neighbors.append(b[i])
 
-        return neighbors
-    def cellNeighbors(self, b, row, col):
-        # print("R:", row, "C:", col)
-        neighbors = []
-        domRow = row - row % 3
-        domCol = col - col % 3
-        for j in range(3):
-            for i in range(3):
-                    neighbors.append(b[(j+domCol) + (i+domRow)*9])
-        return neighbors
+    #     return neighbors
+    # def cellNeighbors(self, b, row, col):
+    #     # print("R:", row, "C:", col)
+    #     neighbors = []
+    #     domRow = row - row % 3
+    #     domCol = col - col % 3
+    #     for j in range(3):
+    #         for i in range(3):
+    #                 neighbors.append(b[(j+domCol) + (i+domRow)*9])
+    #     return neighbors
 
 
 #revision algorithm. reduces domain of Xi based on constraints
-def revision(csp, Xi, Xj):
-    i = 0
-    domXi = csp.getDomain(Xi) #get domain of Xi eg. 'A1'
-    domXj = csp.getDomain(Xj)
-    isRevised = False
-    for x in domXi:
-        valid = True
-        
-        for y in domXj:
-            if x != y:
-                valid = False
-        if valid:
-            csp.removeFromDomain(Xi, i)
-            isRevised = True
-        else:
-            i += 1
-    return isRevised
+
 
 class BTS():
     def __init__(self, csp):
         self.csp = csp
         self.unassigned = {}
+        self.useAC3 = True
         
         for key in self.csp.values.keys():
+            
             values = self.csp.values[key]
-            self.unnasigned[key] = True if len(values) != 1 else False
+            print(values)
+            self.unassigned[key] = True if len(values) != 1 else False
         
         return
 
@@ -192,7 +219,53 @@ class BTS():
         return result
 
     def forwardCheck(self, key, value):
-        return
+
+        savedData = {}
+        savedData[key] = copy.copy(self.csp.values[key])
+        self.unassigned[key] = False
+        self.csp.values[key] = [value]
+        for Xk in self.csp.getValues[key]:
+            index = 0
+            domain = self.csp.values[key]
+            copied = False
+            for dValue in domain:
+                if (dValue == value):
+                    if not copied:
+                        savedData[Xk] = copy.copy(domain)
+                        copied = True
+                    domain.pop(index)
+                else:
+                    index+=1
+        return savedData
+
+    def search(self, depth):
+        if(self.csp.isSolved()):
+            return True
+        
+        (key, values) = self.unassignedValues()
+        for value in values:
+            if self.testConsistency(key, value):
+                if self.useAC3:
+                    savedValues = self.csp.cloneValues()
+                    self.csp.values[key] = [value]
+                    self.unassigned[key] = False
+                    ac3 = AC3_A_BITCH(self.csp)
+                    # ac3.solve()
+                else:
+                    savedData = self.forwardCheck(key, value)
+                
+                if(self.search(depth+1)):
+                    return True
+                if(self.useAC3):
+                    self.unassigned[key] = True
+                    self.csp.values = savedValues
+                else:
+                    for nextKey in savedData.keys():
+                        self.csp.values[nextKey] = savedData[nextKey]
+        return False
+
+    def solve(self):
+        return self.search(1)
 
 
 
@@ -214,8 +287,8 @@ def AC3_A_BITCH(csp):
     #GET ARCS -  call the function boi
     #GET NEIGHBORS - call function
     while not q.empty():
-        (Xi, Xj) = q.pop()
-        if(revision(csp,Xi,Xj)):
+        (Xi, Xj) = q.get()
+        if(csp.revision(Xi,Xj)):
             if(len(csp.getDomain(Xi)) == 0):
                 return False
             addArcs = arcs[Xi]
@@ -240,6 +313,11 @@ if(len(inp) == 81):
     # print("made it here")
     lool = '003020600900305001001806400008102900700000008006708200002609500800203009005010300'
     csp = CSP(lool)
-    print("SUDOKU:")
-    csp.printSudoku()
-    AC3_A_BITCH(csp)
+    if(csp.isSolved() == True):
+        print("sudoku was already solved. that was easy.")
+    else:
+        print("SUDOKU:")
+        csp.printSudoku()
+        bts = BTS(csp)
+        bts.solve()
+        bts.csp.printSudoku()
