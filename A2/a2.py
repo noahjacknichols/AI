@@ -192,34 +192,37 @@ def Inference(assignment, inferences, csp, var, val):
     
     return inferences 
 
-file = open("input.txt", "r")
+try:
+    file = open(str(sys.argv[1]), "r")
 
-count = 1
-for line in file:
-    line = line.strip()
-    
-    if(len(line) != 81):
-            print("your input <{}> doesn't seem to be a sudoku. A correct example is 81 numbers from 0-9.".format(line))
-    else:
-        csp = CSP(line)
-        if AC3(csp):
-            if csp.solved():
-                if(csp.correctSolution(csp.domain)):
-                    # print("----USING AC3----")
-                    csp.printSudoku(csp.domain)
-
-            else:
-                # print("----USING BACKTRACKING----")
-                sudoku = backtrack({}, csp)
-                
-                if sudoku == "Fail":
-                    print("Unsolvable")
-                
-                else:
-                    if(csp.correctSolution(sudoku)):
-                        csp.printSudoku(sudoku)
+    count = 1
+    for line in file:
+        line = line.strip()
+        
+        if(len(line) != 81):
+                print("your input <{}> doesn't seem to be a sudoku. A correct example is 81 numbers from 0-9.".format(line))
         else:
-            print("the sudoku seems to be full, but not a correct sudoku.")
+            csp = CSP(line)
+            if AC3(csp):
+                if csp.solved():
+                    if(csp.correctSolution(csp.domain)):
+                        # print("----USING AC3----")
+                        csp.printSudoku(csp.domain)
+
+                else:
+                    # print("----USING BACKTRACKING----")
+                    sudoku = backtrack({}, csp)
+                    
+                    if sudoku == "Fail":
+                        print("Unsolvable")
+                    
+                    else:
+                        if(csp.correctSolution(sudoku)):
+                            csp.printSudoku(sudoku)
+            else:
+                print("the sudoku seems to be full, but not a correct sudoku.")
 
 
-    count+=1
+        count+=1
+except:
+    print("incorrect file name. example file: 'input.txt'.")
