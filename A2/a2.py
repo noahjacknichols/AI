@@ -1,346 +1,224 @@
-
-import sys
 import queue
+import sys
 import copy
 
-fullDomain = [1,2,3,4,5,6,7,8,9]
-
-
-xPos = ['A','B','C','D','E','F','G','H','I']
-yPos = ['1','2','3','4','5','6','7','8','9']
-
+fullDomain = "123456789"
 
 class cell:
-    def init(self, row, col, value):
+    def __init__(self, row, col, value):
         self.row = row
         self.col = col
         self.value = value
 
 class CSP:
     def __init__(self, inp):
-        self.inp = inp
         self.variables = [r + c for r in 'ABCDEFGHI' for c in '123456789']
-        self.values = {}
-        index = 0
-        for x in self.variables:
-            if(inp[index] == '0'):
-                self.values[x] = [1,2,3,4,5,6,7,8,9]
-            else:
-                self.values[x] = [int(inp[index])]
-            index+=1
-        # print(self.values)
-        self.arcs = {}
-        index = 0
-        for x in range(0,9):
-            for y in range(0,9):
-                
-                self.arcs[xPos[x] + yPos[y]] = self.setArcs(x,y)
-                index += 1
-        
-        # print("ARCS:")
-        # print(self.arcs)
-        
+        self.domain = dict((self.variables[i], fullDomain if inp[i] == '0' else inp[i]) for i in range(len(inp)))
+        a = [self.colNeighbors(self.variables, i) for i in range(9)]
+        b = [self.rowNeighbors(self.variables, i) for i in range(9)]
+        c = [self.blockNeighbors(self.variables, i, j) for i in range(9) for j in range(9)]
+        self.cells = (a + b + c)
+        self.cellNeighbors = dict((s, [u for u in self.cells if s in u]) for s in self.variables)
+        self.neighbors = dict((s, set(sum(self.cellNeighbors[s], [])) - set([s])) for s in self.variables)
+        self.constraints = {(variable, neighbor) for variable in self.variables for neighbor in self.neighbors[variable]}
 
-    def printSudoku(self):
+    def colNeighbors(self, b, col):
+        neighbors = []
+        for i in range(col, len(b), 9):
+            neighbors.append(b[i])
+
+        return neighbors
+
+    def rowNeighbors(self, b, row):
+        neighbors = []
+        end = (row + 1) * 9
+        start = end - 9
+        for i in range(start, end, 1):
+            neighbors.append(b[i])
+        
+        return neighbors
+
+    def blockNeighbors(self, b, row, col):
+        neighbors = []
+        domRow = row - row % 3
+        domCol = col - col % 3
+        for j in range(3):
+            for i in range(3):
+                v = b[(j + domCol) + (i + domRow) * 9]
+                neighbors.append(v)
+            
+        return neighbors
+
+    def solved(self):
+        for v in self.variables:
+            if len(self.domain[v]) > 1:
+                return False
+
+        return True
+
+                
+            
+
+    
+    def printSudoku(self, values):
+        print("SUDOKU:")
         dash = "------------"
         line = ""
         counter = 0
-        for y in range(0,9):
-            if(y % 3  == 0):
-                print(dash)
-            for x in range(0,9):
-                if(x%3 == 0):
-                    line+='|'
-                line+= self.inp[counter]
-                counter+=1
+        domain = ''
 
-            print(line+'|')
+        for var in self.variables:
+            if len(values[var]) > 1:
+                domain += '0'
+            
+            else:
+                domain += str(values[var]) 
+
+        for i in range(9):
+            if (i % 3 == 0):
+                print(dash)
+            
+            for j in range(9):
+                if (j % 3) == 0:
+                    line += '|'
+                
+                line += domain[counter]
+                counter += 1
+            
+            print(line + '|')
             line = ''
         print(dash)
-        
-    def setArcs(self, x,y):
-        #find all constraints for x,y on board
-
-        #horizontal constraints
-        arcs = []
-        for i in range(0,9):
-            if(i!= x):
-                arcs.append(xPos[i]+yPos[y])
-        #vertical constraints
-        for j in range(0,9):
-            if(j!= y):
-                arcs.append(xPos[x]+yPos[j])
-
-        #subdomain constraints
-
-        xDom = x - x % 3
-        yDom = y - y % 3
-        for i in range(0,3):
-            for j in range(0,3):
-                if(x!= j and y != i):
-                    # print("X:",xDom+i, "Y:", yDom+j)
-                    # print("ypos:",)
-                    if(xPos[xDom+j]+yPos[yDom+i] not in arcs and (xPos[xDom+j]+yPos[yDom+i] != xPos[xDom+j]+yPos[yDom+i])):
-                        arcs.append(xPos[xDom+j]+yPos[yDom+i])
-        # print("ARCS:", arcs)
-        return arcs
-
-    def isSolved(self):
-        result = True
-        for d in self.values.values():
-            if(len(d) > 1):
-                result = False
-                break
-        return result
-
-    def cloneValues(self):
-        values = {}
-        for key in self.values.keys():
-            newValues = []
-            for nextValue in self.values[key]:
-                newValues.append(nextValue)
-            values[key] = newValues
-        return values
-
-
-    def getValues(self):
-        return self.values
-
-    def getVariables(self):
-        return self.variables
-
-    def getArcs(self,Xi):
-        return self.arcs[Xi]
-    def getNeighbors(self, Xi):
-        result = []
-        for (x,y) in self.arcs[Xi]:
-            result.append(y)
-        # print(result)
-        return result
-
-    def getDomain(self, Xi):
-        return self.values[Xi]
-    def removeFromDomain(self, Xi, i):
-        self.values[Xi].remove(i)
-    def revision(self, Xi, Xj):
-        i = 0
-        # print("XI:",Xi)
-        # print("Xj:", Xj)
-        
-        domXi = self.values[Xi] #get domain of Xi eg. 'A1'
-        # print(domXi)
-        # print("Xi:",domXi)
-        # print("Xj:", self.values[Xj])
-        isRevised = False
-        for x in domXi:
-            # print("for x")
-            invalid = True
-            
-            for y in self.values[Xj]:
-                # print("for y")
-                # print("X:",x,"Y:",y)
-                if x != y:
-                    invalid = False
-            if invalid:
-                # print("inalid. Xi:",Xi,"i:",i)
-                # print(domXi)
-                domXi.pop(i)
-                isRevised = True
-            else:
-                i += 1
-        return isRevised
-
-        # print("values:")
-        
-        # self.domain = [(var, fullDomain if self.values[self.variables.index(var)] == 0 else self.values[self.variables.index(var)]) for var in self.variables]
-        # a = [self.colNeighbors(self.domain, i) for i in range(9)]
-        # b = [self.rowNeighbors(self.domain, i) for i in range(9)]
-        # c = [self.cellNeighbors(self.domain, i, j) for i in range(9) for j in range(9)]
-        # self.allNeighbors = (a + b + c)
-
-        # self.keys = dict((s, [u for u in self.allNeighbors if s in u]) for s in self.variables)
-        # print(self.domain)
-        # self.neighbors = dict((s, set(sum(self.keys[s], [])) - set([s])) for s in self.variables)
-        # self.constraints = dict((variable, neighbor) for variable in self.variables for neighbor in self.neighbors[variable])
     
-        # print(self.constraints)
-        
-
-    # def colNeighbors(self, b, col):
-    #     neighbors = []
-    #     for i in range(col, len(b), 9):
-    #         neighbors.append(b[i])
-
-    #     return neighbors
-
-    # def rowNeighbors(self, b, row):
-    #     neighbors = []
-    #     end = (row + 1) * 9
-    #     start = end - 9
-    #     for i in range(start, end, 1):
-    #         neighbors.append(b[i])
-
-    #     return neighbors
-    # def cellNeighbors(self, b, row, col):
-    #     # print("R:", row, "C:", col)
-    #     neighbors = []
-    #     domRow = row - row % 3
-    #     domCol = col - col % 3
-    #     for j in range(3):
-    #         for i in range(3):
-    #                 neighbors.append(b[(j+domCol) + (i+domRow)*9])
-    #     return neighbors
-
-
-#revision algorithm. reduces domain of Xi based on constraints
-
-
-class BTS():
-    def __init__(self, csp):
-        self.csp = csp
-        self.unassigned = {}
-        self.useAC3 = True
-        
-        for key in self.csp.values.keys():
-            
-            values = self.csp.values[key]
-            # print(values)
-            self.unassigned[key] = True if len(values) != 1 else False
-        
-        return
-
-
-    def unassignedValues(self):
-        minKey = None
-        minValues = None
-        for key in self.unassigned.keys():
-            if(self.unassigned[key] == True):
-                values = self.csp.values[key]
-                if minValues == None or len(values) < len(minValues):
-                    minKey = key
-                    minValues = values
-
-        return (minKey, minValues)
-
-
-    #input:
-#   Xk(String) -->
-    def testConsistency(self, key, value):
-        result = True
-        for Xk in self.csp.arcs[key]:
-            values = self.csp.values[Xk]
-            if(len(values) == 1 and values[0] == value):
-                result = False
-        return result
-
-    def forwardCheck(self, key, value):
-
-        savedData = {}
-        savedData[key] = copy.copy(self.csp.values[key])
-        self.unassigned[key] = False
-        self.csp.values[key] = [value]
-        for Xk in self.csp.getValues[key]:
-            index = 0
-            domain = self.csp.values[key]
-            copied = False
-            for dValue in domain:
-                if (dValue == value):
-                    if not copied:
-                        savedData[Xk] = copy.copy(domain)
-                        copied = True
-                    domain.pop(index)
-                else:
-                    index+=1
-        return savedData
-
-    def search(self, depth):
-        if(self.csp.isSolved()):
-            # self.csp.printSudoku()
-            return True
-        
-        (key, values) = self.unassignedValues()
-        # print("UNASSIGNED VALUES:",len(self.unassignedValues))
-        for value in values:
-            if self.testConsistency(key, value):
-                if self.useAC3:
-                    savedValues = self.csp.cloneValues()
-                    self.csp.values[key] = [value]
-                    self.unassigned[key] = False
-                    ac3 = AC3_A_BITCH(self.csp)
-                    # ac3.solve()
-                else:
-                    savedData = self.forwardCheck(key, value)
-                
-                if(self.search(depth+1)):
-                    return True
-                if(self.useAC3):
-                    self.unassigned[key] = True
-                    self.csp.values = savedValues
-                else:
-                    for nextKey in savedData.keys():
-                        self.csp.values[nextKey] = savedData[nextKey]
-        return False
-
-    def solve(self):
-        return self.search(1)
-
-
-
-
-def AC3_A_BITCH(csp):
-    q = queue.Queue()
-    arcs = csp.arcs
-    variables = csp.getVariables()
-
-    # print("HERE:")
-    # print(arcs)
-    for var in variables:
-        a = arcs[var]
-        for arc in a:
-            
-            q.put((var,arc))
-    # print("finished")
-    # print("QUEUE:")
-    # print(list(q.queue))
-    #GET ARCS -  call the function boi
-    #GET NEIGHBORS - call function
-    while not q.empty():
-        # print(list(q.queue))
-        (Xi, Xj) = q.get()
-        
-        if(csp.revision(Xi,Xj)):
-            if(len(csp.values[Xi]) == 0):
+    def consistent(self, assignment, var, val):
+        for neighbor in self.neighbors[var]:
+            if neighbor in assignment.keys() and assignment[neighbor] == val:
                 return False
-            # print("XI:",Xi)
-            # print("NEIGHBORS",csp.getArcs(Xi))
-            for Xk in csp.getArcs(Xi):  #<-- do the function thing
+        
+        return True
 
-                q.put((Xk, Xi))
-                # print(list(q.queue))
+
+    def correctSolution(self, assignment):
+        for v in self.variables:
+            val = assignment[v]
+            if not self.consistent(assignment, v, val):
+                return False
+        
+        return True
+
+def AC3(csp):
+    q = queue.Queue()
+    try:
+        for arc in csp.constraints:
+            q.put(arc)
+
+        while not q.empty():
+            (Xi, Xj) = q.get()
+
+            if Revise(csp, Xi, Xj):
+                if len(csp.domain[Xi]) == 0:
+                    return False
+                
+                for Xk in (csp.neighbors[Xi] - set(Xj)):
+                    q.put((Xk, Xi))
+            print(len(list(q.queue)))
+    except:
+        return False
+    
+
     return True
 
+def Revise(csp, Xi, Xj):
+    revised = False
+    values = set(csp.domain[Xi])
+    
+    for x in values:
+        if not isConsistent(csp, x, Xi, Xj):
+            csp.domain[Xi] = csp.domain[Xi].replace(x, '')
+            revised = True
 
+    return revised
 
+def isConsistent(csp, x, Xi, Xj):
+    for y in csp.domain[Xj]:
+        if Xj in csp.neighbors[Xi] and y != x:
+            return True
+    
+    return False
 
+def backtrack(assignment, csp):
+    if set(assignment.keys()) == set(csp.variables):
+        return assignment
+    
+    var = select_unassigned_variable(assignment, csp)
+    domain = copy.deepcopy(csp.domain)
+    
+    for val in csp.domain[var]:
+        if csp.consistent(assignment, var, val):
+            assignment[var] = val
+            inferences = {}
+            inferences = Inference(assignment, inferences, csp, var, val)
 
+            if inferences != "Fail":
+                result = backtrack(assignment, csp)
 
+                if result != "Fail":
+                    return result
+            
+            del assignment[var]
+            csp.domain.update(domain)
 
+    return "Fail"
 
-file = open("nickisdumb.txt", 'r')
-inp = file.read()
+def select_unassigned_variable(assignment, csp):
+    unassigned_vars = dict((cell, len(csp.domain[cell])) for cell in csp.domain if cell not in assignment.keys())
+    return min(unassigned_vars, key=unassigned_vars.get)
 
-if(len(inp) == 81):
-    #call init CSP function
-    # print("INP:", inp)
-    # print("made it here")
-    lool = '003020600900305001001806400008102900700000008006708200002609500800203009005010300'
-    csp = CSP(lool)
-    if(csp.isSolved() == True):
-        print("sudoku was already solved. that was easy.")
+def Inference(assignment, inferences, csp, var, val):
+    inferences[var] = val
+    
+    for neighbor in csp.neighbors[var]:
+        if neighbor not in assignment and val in csp.domain[neighbor]:
+            if len(csp.domain[neighbor]) == 1:
+                return "Fail"
+            
+            remaining = csp.domain[neighbor] = csp.domain[neighbor].replace(val, "")
+
+            if len(remaining) == 1:
+                flag = Inference(assignment, inferences, csp, neighbor, remaining)
+
+                if flag == "Fail":
+                    return "Fail"
+    
+    return inferences 
+
+file = open("input.txt", "r")
+
+count = 1
+for line in file:
+    line = line.strip()
+    
+    if(len(line) != 81):
+            print("your input <{}> doesn't seem to be a sudoku. A correct example is 81 numbers from 0-9.".format(line))
     else:
-        print("SUDOKU:")
-        csp.printSudoku()
-        bts = BTS(csp)
-        bts.solve()
-        print("FINISHED SUDOKU:")
-        csp.printSudoku()
+        csp = CSP(line)
+        if AC3(csp):
+            if csp.solved():
+                if(csp.correctSolution(csp.domain)):
+                    # print("----USING AC3----")
+                    csp.printSudoku(csp.domain)
+
+            else:
+                # print("----USING BACKTRACKING----")
+                sudoku = backtrack({}, csp)
+                
+                if sudoku == "Fail":
+                    print("Unsolvable")
+                
+                else:
+                    if(csp.correctSolution(sudoku)):
+                        csp.printSudoku(sudoku)
+        else:
+            print("the sudoku seems to be full, but not a correct sudoku.")
+
+
+    count+=1
