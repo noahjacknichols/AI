@@ -120,7 +120,8 @@ def AC3(csp):
                 
                 for Xk in (csp.neighbors[Xi] - set(Xj)):
                     q.put((Xk, Xi))
-            print(len(list(q.queue)))
+            print("Current size of queue:",len(list(q.queue)))
+        print()
     except:
         return False
     
