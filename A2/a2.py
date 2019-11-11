@@ -33,8 +33,10 @@ class CSP:
         index = 0
         for x in range(0,9):
             for y in range(0,9):
-                self.arcs[self.variables[index]] = self.setArcs(x,y)
+                
+                self.arcs[xPos[x] + yPos[y]] = self.setArcs(x,y)
                 index += 1
+        
         print("ARCS:")
         print(self.arcs)
         
@@ -109,6 +111,12 @@ class CSP:
 
     def getArcs(self):
         return self.arcs
+    def getNeighbors(self, Xi):
+        result = []
+        for (x,y) in self.arcs[Xi]:
+            result.append(y)
+        print(result)
+        return result
 
     def getDomain(self, Xi):
         return self.values[Xi]
@@ -116,21 +124,27 @@ class CSP:
         self.values[Xi].remove(i)
     def revision(self, Xi, Xj):
         i = 0
+        # print("XI:",Xi)
+        # print("Xj:", Xj)
+        
         domXi = self.values[Xi] #get domain of Xi eg. 'A1'
-        domXj = csp.getDomain(Xj)
-        print("Xi:",domXi)
-        print("Xj:", domXj)
+        # print(domXi)
+        # print("Xi:",domXi)
+        # print("Xj:", self.values[Xj])
         isRevised = False
         for x in domXi:
+            # print("for x")
             invalid = True
             
             for y in self.values[Xj]:
-                print("X:",x,"Y:",y)
+                # print("for y")
+                # print("X:",x,"Y:",y)
                 if x != y:
                     invalid = False
             if invalid:
                 print("inalid. Xi:",Xi,"i:",i)
-                domXi.pop(i)
+                print(domXi)
+                domXi.pop(1)
                 isRevised = True
             else:
                 i += 1
@@ -275,25 +289,27 @@ def AC3_A_BITCH(csp):
     arcs = csp.getArcs()
     variables = csp.getVariables()
 
-    print("HERE:")
+    # print("HERE:")
     # print(arcs)
     for var in variables:
         a = arcs[var]
         for arc in a:
-            # print((var,arc))
+            
             q.put((var,arc))
-    print("finished")
-    
+    # print("finished")
+    print("QUEUE:")
+    print(list(q.queue))
     #GET ARCS -  call the function boi
     #GET NEIGHBORS - call function
     while not q.empty():
         (Xi, Xj) = q.get()
         if(csp.revision(Xi,Xj)):
-            if(len(csp.getDomain(Xi)) == 0):
+            if(len(csp.values[Xi]) == 0):
                 return False
             addArcs = arcs[Xi]
 
-            for Xk in addArcs:  #<-- do the function thing
+            for Xk in csp.getNeighbors(Xi):  #<-- do the function thing
+
                 q.put((Xk, Xi))
     return True
 
