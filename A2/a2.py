@@ -28,7 +28,7 @@ class CSP:
             else:
                 self.values[x] = [int(inp[index])]
             index+=1
-        print(self.values)
+        # print(self.values)
         self.arcs = {}
         index = 0
         for x in range(0,9):
@@ -37,8 +37,8 @@ class CSP:
                 self.arcs[xPos[x] + yPos[y]] = self.setArcs(x,y)
                 index += 1
         
-        print("ARCS:")
-        print(self.arcs)
+        # print("ARCS:")
+        # print(self.arcs)
         
 
     def printSudoku(self):
@@ -82,7 +82,7 @@ class CSP:
                     # print("ypos:",)
                     if(xPos[xDom+j]+yPos[yDom+i] not in arcs and (xPos[xDom+j]+yPos[yDom+i] != xPos[xDom+j]+yPos[yDom+i])):
                         arcs.append(xPos[xDom+j]+yPos[yDom+i])
-        print("ARCS:", arcs)
+        # print("ARCS:", arcs)
         return arcs
 
     def isSolved(self):
@@ -115,7 +115,7 @@ class CSP:
         result = []
         for (x,y) in self.arcs[Xi]:
             result.append(y)
-        print(result)
+        # print(result)
         return result
 
     def getDomain(self, Xi):
@@ -124,12 +124,12 @@ class CSP:
         self.values[Xi].remove(i)
     def revision(self, Xi, Xj):
         i = 0
-        print("XI:",Xi)
+        # print("XI:",Xi)
         # print("Xj:", Xj)
         
         domXi = self.values[Xi] #get domain of Xi eg. 'A1'
         # print(domXi)
-        print("Xi:",domXi)
+        # print("Xi:",domXi)
         # print("Xj:", self.values[Xj])
         isRevised = False
         for x in domXi:
@@ -138,13 +138,13 @@ class CSP:
             
             for y in self.values[Xj]:
                 # print("for y")
-                print("X:",x,"Y:",y)
+                # print("X:",x,"Y:",y)
                 if x != y:
                     invalid = False
             if invalid:
-                print("inalid. Xi:",Xi,"i:",i)
-                print(domXi)
-                domXi.pop(1)
+                # print("inalid. Xi:",Xi,"i:",i)
+                # print(domXi)
+                domXi.pop(i)
                 isRevised = True
             else:
                 i += 1
@@ -204,7 +204,7 @@ class BTS():
         for key in self.csp.values.keys():
             
             values = self.csp.values[key]
-            print(values)
+            # print(values)
             self.unassigned[key] = True if len(values) != 1 else False
         
         return
@@ -214,10 +214,11 @@ class BTS():
         minKey = None
         minValues = None
         for key in self.unassigned.keys():
-            values = self.csp.values[key]
-            if minValues == None or len(values) < len(minValues):
-                minKey = key
-                minValues = values
+            if(self.unassigned[key] == True):
+                values = self.csp.values[key]
+                if minValues == None or len(values) < len(minValues):
+                    minKey = key
+                    minValues = values
 
         return (minKey, minValues)
 
@@ -254,9 +255,11 @@ class BTS():
 
     def search(self, depth):
         if(self.csp.isSolved()):
+            # self.csp.printSudoku()
             return True
         
         (key, values) = self.unassignedValues()
+        # print("UNASSIGNED VALUES:",len(self.unassignedValues))
         for value in values:
             if self.testConsistency(key, value):
                 if self.useAC3:
@@ -297,8 +300,8 @@ def AC3_A_BITCH(csp):
             
             q.put((var,arc))
     # print("finished")
-    print("QUEUE:")
-    print(list(q.queue))
+    # print("QUEUE:")
+    # print(list(q.queue))
     #GET ARCS -  call the function boi
     #GET NEIGHBORS - call function
     while not q.empty():
@@ -308,8 +311,8 @@ def AC3_A_BITCH(csp):
         if(csp.revision(Xi,Xj)):
             if(len(csp.values[Xi]) == 0):
                 return False
-            print("XI:",Xi)
-            print("NEIGHBORS",csp.getArcs(Xi))
+            # print("XI:",Xi)
+            # print("NEIGHBORS",csp.getArcs(Xi))
             for Xk in csp.getArcs(Xi):  #<-- do the function thing
 
                 q.put((Xk, Xi))
@@ -339,4 +342,5 @@ if(len(inp) == 81):
         csp.printSudoku()
         bts = BTS(csp)
         bts.solve()
-        bts.csp.printSudoku()
+        print("FINISHED SUDOKU:")
+        csp.printSudoku()
