@@ -82,7 +82,7 @@ class CSP:
                     # print("ypos:",)
                     if(xPos[xDom+j]+yPos[yDom+i] not in arcs and (xPos[xDom+j]+yPos[yDom+i] != xPos[xDom+j]+yPos[yDom+i])):
                         arcs.append(xPos[xDom+j]+yPos[yDom+i])
-
+        print("ARCS:", arcs)
         return arcs
 
     def isSolved(self):
@@ -109,8 +109,8 @@ class CSP:
     def getVariables(self):
         return self.variables
 
-    def getArcs(self):
-        return self.arcs
+    def getArcs(self,Xi):
+        return self.arcs[Xi]
     def getNeighbors(self, Xi):
         result = []
         for (x,y) in self.arcs[Xi]:
@@ -124,12 +124,12 @@ class CSP:
         self.values[Xi].remove(i)
     def revision(self, Xi, Xj):
         i = 0
-        # print("XI:",Xi)
+        print("XI:",Xi)
         # print("Xj:", Xj)
         
         domXi = self.values[Xi] #get domain of Xi eg. 'A1'
         # print(domXi)
-        # print("Xi:",domXi)
+        print("Xi:",domXi)
         # print("Xj:", self.values[Xj])
         isRevised = False
         for x in domXi:
@@ -138,7 +138,7 @@ class CSP:
             
             for y in self.values[Xj]:
                 # print("for y")
-                # print("X:",x,"Y:",y)
+                print("X:",x,"Y:",y)
                 if x != y:
                     invalid = False
             if invalid:
@@ -286,7 +286,7 @@ class BTS():
 
 def AC3_A_BITCH(csp):
     q = queue.Queue()
-    arcs = csp.getArcs()
+    arcs = csp.arcs
     variables = csp.getVariables()
 
     # print("HERE:")
@@ -302,15 +302,18 @@ def AC3_A_BITCH(csp):
     #GET ARCS -  call the function boi
     #GET NEIGHBORS - call function
     while not q.empty():
+        # print(list(q.queue))
         (Xi, Xj) = q.get()
+        
         if(csp.revision(Xi,Xj)):
             if(len(csp.values[Xi]) == 0):
                 return False
-            addArcs = arcs[Xi]
-
-            for Xk in csp.getNeighbors(Xi):  #<-- do the function thing
+            print("XI:",Xi)
+            print("NEIGHBORS",csp.getArcs(Xi))
+            for Xk in csp.getArcs(Xi):  #<-- do the function thing
 
                 q.put((Xk, Xi))
+                # print(list(q.queue))
     return True
 
 
